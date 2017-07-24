@@ -20,14 +20,14 @@ kirby()->plugin('queue-for-kirby');
 if(!class_exists('queue')) throw new Exception('This plugin requires the Queue for Kirby plugin');
 
 // Define a job by giving it a name and an action
-queue::define('send_webmention', function($data) {
+queue::define('send_webmention', function($job) {
 
     // For example: send a webmention!
-    $endpoint = discover_webmention_endpoint($data['target']);
+    $endpoint = discover_webmention_endpoint($job->get('target'));
 
     $r = remote::post($endpoint, ['data' => [
-        'target' => $data['target'],
-        'source' => $data['source']
+        'target' => $job->get('target'),
+        'source' => $job->get('source')
     ]]);
 
     // But it could be anything ofcourse
@@ -52,8 +52,8 @@ queue::add('send_webmention', [
 The data you pass in is up to you: you can define your own jobs. The only caveat is that the data needs to be stored in YAML. To access a `Page` object, you can use:
 
 ```php
-queue::define('some_page_action', function($data) {
-    $page = page($data['page']);
+queue::define('some_page_action', function($job) {
+    $page = page($job->get('page'));
 });
 
 // and
@@ -80,7 +80,7 @@ The following static methods are available on this class:
 Define a new action that should be executed once the job is handled by the worker.
 
 ```php
-queue::define('job_name', function($data) {
+queue::define('job_name', function($job) {
     // Do something
 });
 ```
@@ -171,6 +171,25 @@ Returns the full path of `site/queue/.failed`.
 
 On a Job object, you can find the following methods:
 
+### $job->get($key)
+
+Tries to get the value under `$key` from the `$data` array. (You can also pass a non-array to `$data`, in which case `$job->get('some_key')` will return `null`, and you have to use `$job->data()` to get it.)
+
+```php
+queue::define('job_name', function($job) {
+    $job->get('param');
+    // contains 'some data' in the job added below
+});
+
+queue::add('job_name', [
+    'param' => 'some data'
+]);
+```
+
+### $job->data()
+
+Returns the `$data` that was passed in when the job was created.
+
 ### $job->id()
 
 Returns the ID of the job, which is a unique identifier for the job. This is also the filename, minus '.yml'.
@@ -182,10 +201,6 @@ Returns the name of the job, which is the name of the action that is performed w
 ### $job->added()
 
 Returns the date the job was added to the queue, formatted as `date('c')` (`2001-01-01T01:01:01+00:00`).
-
-### $job->data()
-
-Returns the data that was passed in when the job was created.
 
 ### $job->error()
 

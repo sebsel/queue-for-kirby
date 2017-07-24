@@ -63,11 +63,13 @@ final class QueueTest extends TestCase
         $this->assertEquals([
             'param' => 'some data'
         ], $job->data());
+        $this->assertEquals('some data', $job->get('param'));
 
         // Test second job of queue
         $job = array_shift($jobs);
         $this->assertEquals('another_job', $job->name());
         $this->assertEquals(null, $job->data());
+        $this->assertEquals(null, $job->get('param'));
 
         // Note that the code above does not remove the jobs!
         $this->assertCount(2, queue::jobs());

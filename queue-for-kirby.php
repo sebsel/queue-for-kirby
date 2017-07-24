@@ -1,6 +1,11 @@
 <?php
 
-class Job extends Obj {}
+class Job extends Obj {
+    public function get($key, $default = null)
+    {
+        return isset($this->data[$key]) ? $this->data[$key] : $default;
+    }
+}
 
 class Queue
 {
@@ -52,7 +57,7 @@ class Queue
                     or !is_callable(static::$actions[$job->name()])) {
                     throw new Error("Action '{$job->name()}' not defined");
                 }
-                if (call_user_func(static::$actions[$job->name()], $job->data()) === false) {
+                if (call_user_func(static::$actions[$job->name()], $job) === false) {
                     throw new Error('Job returned false');
                 }
             } catch (Exception $e) {
