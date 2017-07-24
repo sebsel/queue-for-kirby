@@ -78,16 +78,19 @@ final class QueueTest extends TestCase
     public function Queue_flush__removes_all_jobs()
     {
         $this->assertCount(0, queue::jobs());
+        $this->assertFalse(queue::hasJobs());
 
         queue::add('test_job');
         queue::add('test_job');
         queue::add('test_job');
 
         $this->assertCount(3, queue::jobs());
+        $this->assertTrue(queue::hasJobs());
 
         queue::flush();
 
         $this->assertCount(0, queue::jobs());
+        $this->assertFalse(queue::hasJobs());
     }
 
     /** @test */
