@@ -97,7 +97,7 @@ queue::add('job_name', [
 
 ### queue::jobs()
 
-Returns an array of jobs, which are an associated array with `added`, `name` and `data`.
+Returns an array of jobs, which are associated arrays with `added`, `name` and `data`.
 
 Doing something with these jobs does **not** change the queue. Only `queue::work()` removes jobs from the queue.
 
@@ -122,7 +122,7 @@ queue::jobs();
 
 ### queue::failedJobs()
 
-Returns an array of failed jobs, which are an associated array with `error` and `tried`, in addition to a normal job's `added`, `name` and `data`.
+Returns an array of failed jobs, which are associated arrays with `error` and `tried`, in addition to a normal job's `added`, `name` and `data`.
 
 ```php
 queue::jobs();
