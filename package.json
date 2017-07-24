@@ -1,0 +1,8 @@
+{
+  "name": "queue-for-kirby",
+  "description": "Basic queue to the Kirby CMS, using Cron and Kirby's flat file system",
+  "author": "Sebastiaan Andeweg",
+  "license": "MIT",
+  "version": "1.0.0",
+  "type": "kirby-plugin"
+}
