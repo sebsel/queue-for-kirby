@@ -85,14 +85,16 @@ queue::define('job_name', function($data) {
 });
 ```
 
-### queue::add($name, $data)
+### queue::add($name, $data = null)
 
-Add a new job to the queue. The data you pass in can be anything, as long as it can be stored in YAML.
+Add a new job to the queue. The data you pass in can be anything, as long as it can be stored in YAML. The data can be empty.
 
 ```php
 queue::add('job_name', [
     'param' => 'some data'
 ]);
+
+queue::add('another_job');
 ```
 
 ### queue::jobs()
@@ -115,7 +117,7 @@ queue::jobs();
     [
         'added' => '2001-01-01T01:01:02+00:00',
         'name' => 'another_job',
-        'data' => 'some string'
+        'data' => null
     ]
 ]
 ```
@@ -135,7 +137,7 @@ queue::jobs();
             'param' => 'some data'
         ],
         'error' => 'Job returned false',
-        'tried' => '2001-01-01T01:01:02+00:00'
+        'tried' => '2001-01-01T01:01:03+00:00'
     ]
 ]
 ```
