@@ -11,7 +11,7 @@ class Queue
 
     public static function add($name, $data)
     {
-        $jobfile = static::_queue_path() . DS . uniqid() . '.yml';
+        $jobfile = static::path() . DS . uniqid() . '.yml';
 
         yaml::write($jobfile, [
             'added' => date('c'),
@@ -22,7 +22,7 @@ class Queue
 
     private static function failed($job, $error)
     {
-        $jobfile = static::_queue_path() . DS . '.failed' . DS . uniqid() . '.yml';
+        $jobfile = static::path() . DS . '.failed' . DS . uniqid() . '.yml';
 
         yaml::write($jobfile, [
             'added' => $job['added'],
@@ -62,7 +62,7 @@ class Queue
 
     private static function _get_next_jobfile()
     {
-        foreach(dir::read(static::_queue_path()) as $jobfile) {
+        foreach(dir::read(static::path()) as $jobfile) {
             // No .working or .DS_store
             if (substr($jobfile,0,1) == '.') continue;
 
@@ -77,29 +77,34 @@ class Queue
     {
         $jobfile = static::_get_next_jobfile();
 
-        $job = yaml::read(static::_queue_path() . DS . $jobfile);
-        f::remove(static::_queue_path() . DS . $jobfile);
+        $job = yaml::read(static::path() . DS . $jobfile);
+        f::remove(static::path() . DS . $jobfile);
 
         return $job;
     }
 
-    private static function _queue_path()
+    public static function path()
     {
         return kirby()->roots()->site() . DS . 'queue';
     }
 
+    public static function failedPath()
+    {
+        return static::path() . DS . '.failed';
+    }
+
     private static function isWorking()
     {
-        return f::exists(static::_queue_path() . DS . '.working');
+        return f::exists(static::path() . DS . '.working');
     }
 
     private static function setWorking()
     {
-        dir::make(static::_queue_path() . DS . '.working');
+        dir::make(static::path() . DS . '.working');
     }
 
     private static function stopWorking()
     {
-        dir::remove(static::_queue_path() . DS . '.working');
+        dir::remove(static::path() . DS . '.working');
     }
 }
