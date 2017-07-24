@@ -55,9 +55,40 @@ class Queue
         static::stopWorking();
     }
 
+    private static function _jobs($failed = false)
+    {
+        $path = static::path();
+        if($failed) $path = static::failedPath();
+
+        $jobs = dir::read($path);
+
+        $jobs = array_filter($jobs, function($job) {
+            return substr($job,0,1) != '.';
+        });
+
+        return array_map(function ($job) {
+            return yaml::read(static::path() . DS . $job);
+        }, $jobs);
+    }
+
+    public static function jobs()
+    {
+        return static::_jobs(false);
+    }
+
+    public static function failedJobs()
+    {
+        return static::_jobs(true);
+    }
+
     public static function hasJobs()
     {
         return static::_get_next_jobfile() !== false;
+    }
+
+    public static function flush()
+    {
+        dir::clean(static::path());
     }
 
     private static function _get_next_jobfile()
