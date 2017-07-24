@@ -9,7 +9,7 @@ class Queue
         static::$jobs[$name] = $action;
     }
 
-    public static function add($name, $data)
+    public static function add($name, $data = null)
     {
         $jobfile = static::path() . DS . uniqid() . '.yml';
 
