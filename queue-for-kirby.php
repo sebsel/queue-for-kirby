@@ -3,7 +3,6 @@
 class Queue
 {
     static $jobs = [];
-    static $queue = [];
 
     public static function define($name, $action)
     {
