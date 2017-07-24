@@ -13,9 +13,12 @@ class Queue
 
     public static function add($name, $data = null)
     {
-        $jobfile = static::path() . DS . uniqid() . '.yml';
+        $id = uniqid();
+
+        $jobfile = static::path() . DS . $id . '.yml';
 
         yaml::write($jobfile, [
+            'id' => $id,
             'added' => date('c'),
             'name' => $name,
             'data' => $data
@@ -24,7 +27,7 @@ class Queue
 
     private static function failed($job, $error)
     {
-        $jobfile = static::path() . DS . '.failed' . DS . uniqid() . '.yml';
+        $jobfile = static::path() . DS . '.failed' . DS . $job->id() . '.yml';
 
         yaml::write($jobfile, [
             'id' => $job->id(),

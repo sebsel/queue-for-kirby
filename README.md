@@ -171,6 +171,10 @@ Returns the full path of `site/queue/.failed`.
 
 On a Job object, you can find the following methods:
 
+### $job->id()
+
+Returns the ID of the job, which is a unique identifier for the job. This is also the filename, minus '.yml'.
+
 ### $job->name()
 
 Returns the name of the job, which is the name of the action that is performed when working on the job.
