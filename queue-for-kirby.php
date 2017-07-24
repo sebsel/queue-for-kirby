@@ -1,5 +1,7 @@
 <?php
 
+class Job extends Obj {}
+
 class Queue
 {
     private static $actions = [];
@@ -25,9 +27,10 @@ class Queue
         $jobfile = static::path() . DS . '.failed' . DS . uniqid() . '.yml';
 
         yaml::write($jobfile, [
-            'added' => $job['added'],
-            'name' => $job['name'],
-            'data' => $job['data'],
+            'id' => $job->id(),
+            'added' => $job->added(),
+            'name' => $job->name(),
+            'data' => $job->data(),
             'error' => $error,
             'tried' => date('c')
         ]);
@@ -42,11 +45,11 @@ class Queue
         if (static::hasJobs()) {
             $job = static::_get_next_job();
             try {
-                if (!isset(static::$actions[$job['name']])
-                    or !is_callable(static::$actions[$job['name']])) {
-                    throw new Error("Action '{$job['name']}' not defined");
+                if (!isset(static::$actions[$job->name()])
+                    or !is_callable(static::$actions[$job->name()])) {
+                    throw new Error("Action '{$job->name()}' not defined");
                 }
-                if (call_user_func(static::$actions[$job['name']], $job['data']) === false) {
+                if (call_user_func(static::$actions[$job->name()], $job->data()) === false) {
                     throw new Error('Job returned false');
                 }
             } catch (Exception $e) {
@@ -59,7 +62,7 @@ class Queue
         static::stopWorking();
     }
 
-    private static function _jobs($failed = false)
+    private static function _jobs($failed)
     {
         $path = static::path();
         if($failed) $path = static::failedPath();
@@ -70,8 +73,8 @@ class Queue
             return substr($job,0,1) != '.';
         });
 
-        return array_map(function ($job) {
-            return yaml::read(static::path() . DS . $job);
+        return array_map(function ($job) use ($path) {
+            return new Job(yaml::read($path . DS . $job));
         }, $jobs);
     }
 
@@ -115,7 +118,7 @@ class Queue
         $job = yaml::read(static::path() . DS . $jobfile);
         f::remove(static::path() . DS . $jobfile);
 
-        return $job;
+        return new Job($job);
     }
 
     public static function path()

@@ -59,15 +59,15 @@ final class QueueTest extends TestCase
 
         // Test first job of queue
         $job = array_shift($jobs);
-        $this->assertEquals('test_job', $job['name']);
+        $this->assertEquals('test_job', $job->name());
         $this->assertEquals([
             'param' => 'some data'
-        ], $job['data']);
+        ], $job->data());
 
         // Test second job of queue
         $job = array_shift($jobs);
-        $this->assertEquals('another_job', $job['name']);
-        $this->assertEquals(null, $job['data']);
+        $this->assertEquals('another_job', $job->name());
+        $this->assertEquals(null, $job->data());
 
         // Note that the code above does not remove the jobs!
         $this->assertCount(2, queue::jobs());
@@ -112,6 +112,7 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::path())));
 
         // Check some things about the job
+        $this->assertEquals(new Job($job), a::first(queue::jobs()));
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['data'], $params);
 
@@ -147,6 +148,7 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
+        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Job returned false');
     }
@@ -174,6 +176,7 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
+        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Exception message');
     }
@@ -201,12 +204,13 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
+        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Error message');
     }
 
     /** @test */
-    public function job_fails_on_non_existant_action()
+    public function job_fails_on_non_existent_action()
     {
         queue::add('job_without_action');
 
@@ -224,6 +228,7 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
+        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
         $this->assertEquals($job['name'], 'job_without_action');
         $this->assertEquals($job['error'], 'Action \'job_without_action\' not defined');
     }

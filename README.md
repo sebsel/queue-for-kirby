@@ -99,7 +99,7 @@ queue::add('another_job');
 
 ### queue::jobs()
 
-Returns an array of jobs, which are associated arrays with `added`, `name` and `data`.
+Returns an array of Job objects, for all jobs in the queue.
 
 Doing something with these jobs does **not** change the queue. Only `queue::work()` removes jobs from the queue.
 
@@ -107,30 +107,33 @@ Doing something with these jobs does **not** change the queue. Only `queue::work
 queue::jobs();
 // Returns, for example:
 [
-    [
+    object(Job) {
+        'id' => '5975f78ed3db6',
         'added' => '2001-01-01T01:01:01+00:00',
         'name' => 'job_name',
         'data' => [
             'param' => 'some data'
         ]
-    ],
-    [
+    },
+    object(Job) {
+        'id' => '5975f78ed303f',
         'added' => '2001-01-01T01:01:02+00:00',
         'name' => 'another_job',
         'data' => null
-    ]
+    }
 ]
 ```
 
 ### queue::failedJobs()
 
-Returns an array of failed jobs, which are associated arrays with `error` and `tried`, in addition to a normal job's `added`, `name` and `data`.
+Returns an array of Job objects, representing the failed jobs.
 
 ```php
 queue::jobs();
 // Returns, for example:
 [
-    [
+    object(Job) {
+        'id' => '5975f78ed3db6',
         'added' => '2001-01-01T01:01:01+00:00',
         'name' => 'job_name',
         'data' => [
@@ -138,7 +141,7 @@ queue::jobs();
         ],
         'error' => 'Job returned false',
         'tried' => '2001-01-01T01:01:03+00:00'
-    ]
+    }
 ]
 ```
 
@@ -161,3 +164,29 @@ Returns the full path of `site/queue`.
 ### queue::failedPath()
 
 Returns the full path of `site/queue/.failed`.
+
+
+
+## Job methods
+
+On a Job object, you can find the following methods:
+
+### $job->name()
+
+Returns the name of the job, which is the name of the action that is performed when working on the job.
+
+### $job->added()
+
+Returns the date the job was added to the queue, formatted as `date('c')` (`2001-01-01T01:01:01+00:00`).
+
+### $job->data()
+
+Returns the data that was passed in when the job was created.
+
+### $job->error()
+
+Returns the error for a failed job, or `null` on a normal one.
+
+### $job->tried()
+
+Returns the date the job was last tried to execute, formatted as `date('c')` (`2001-01-01T01:01:01+00:00`). This will be `null` for non-failed jobs.
