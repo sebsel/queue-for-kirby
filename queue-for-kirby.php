@@ -42,6 +42,10 @@ class Queue
         if (static::hasJobs()) {
             $job = static::_get_next_job();
             try {
+                if (!isset(static::$jobs[$job['name']])
+                    or !is_callable(static::$jobs[$job['name']])) {
+                    throw new Error("Action '{$job['name']}' not defined");
+                }
                 if (call_user_func(static::$jobs[$job['name']], $job['data']) === false) {
                     throw new Error('Job returned false');
                 }
