@@ -70,3 +70,92 @@ Do not forget to add `site/plugins/queue-for-kirby/worker.php` to a Cron Job, or
 Failed jobs are currently added to `site/queue/.failed`, with some information about the error attached. They will not be retried automatically. To trigger them again, just move them one folder down to `site/queue` and make sure the worker runs.
 
 To fail a job, either throw an exception or return false.
+
+## Available methods
+
+The following static methods are available on this class:
+
+### queue::define($name, $action)
+
+Define a new action that should be executed once the job is handled by the worker.
+
+```php
+queue::define('job_name', function($data) {
+    // Do something
+});
+```
+
+### queue::add($name, $data)
+
+Add a new job to the queue. The data you pass in can be anything, as long as it can be stored in YAML.
+
+```php
+queue::add('job_name', [
+    'param' => 'some data'
+]);
+```
+
+### queue::jobs()
+
+Returns an array of jobs, which are an associated array with `added`, `name` and `data`.
+
+Doing something with these jobs does **not** change the queue. Only `queue::work()` removes jobs from the queue.
+
+```php
+queue::jobs();
+// Returns, for example:
+[
+    [
+        'added' => '2001-01-01T01:01:01+00:00',
+        'name' => 'job_name',
+        'data' => [
+            'param' => 'some data'
+        ]
+    ],
+    [
+        'added' => '2001-01-01T01:01:02+00:00',
+        'name' => 'another_job',
+        'data' => 'some string'
+    ]
+]
+```
+
+### queue::failedJobs()
+
+Returns an array of failed jobs, which are an associated array with `error` and `tried`, in addition to a normal job's `added`, `name` and `data`.
+
+```php
+queue::jobs();
+// Returns, for example:
+[
+    [
+        'added' => '2001-01-01T01:01:01+00:00',
+        'name' => 'job_name',
+        'data' => [
+            'param' => 'some data'
+        ],
+        'error' => 'Job returned false',
+        'tried' => '2001-01-01T01:01:02+00:00'
+    ]
+]
+```
+
+### queue::work()
+
+Executes the first job in the queue. Don't call this one outside of `worker.php`, because that would defeat the purpose of the queue.
+
+### queue::hasJobs()
+
+Returns `true` or `false`, depending on wether there are jobs in the queue.
+
+### queue::flush()
+
+Removes all jobs from the queue, **including** failed jobs.
+
+### queue::path()
+
+Returns the full path of `site/queue`.
+
+### queue::failedPath()
+
+Returns the full path of `site/queue/.failed`.
