@@ -61,6 +61,25 @@ class Queue
         );
     }
 
+    /**
+     * Removes a failed job
+     * @param  string|Job  ID or Job object to be deleted
+     * @throws Error       When a non-Job object is given
+     * @throws Error       When failed Job with ID is not found
+     */
+    public static function remove($failedJob)
+    {
+        if (is_string($failedJob)) {
+            $failedJob = static::_find_failed_by_id($failedJob);
+        }
+
+        if (!is_a($failedJob, 'Job')) {
+            throw new Error('queue::remove() expects a Job object');
+        }
+
+        f::remove(static::failedPath() . DS . $failedJob->id() . '.yml');
+    }
+
     private static function failed($job, $error)
     {
         $jobfile = static::failedPath() . DS . $job->id() . '.yml';

@@ -150,6 +150,69 @@ final class QueueTest extends TestCase
     }
 
     /** @test */
+    public function Queue_remove__removes_failed_jobs()
+    {
+        queue::add('job_to_fail');
+        queue::add('another_job_that_fails');
+        queue::work();
+        queue::work();
+
+        // We now have 0 jobs and 2 failed job
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(2, queue::failedJobs());
+
+        // Take the Job, check if it's the one, and remove it
+        $failedJob = queue::failedJobs()->first();
+        $this->assertEquals('job_to_fail', $failedJob->name());
+        queue::remove($failedJob);
+
+        // We have only one failed job now
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // The remaining job is the other job
+        $failedJob = queue::failedJobs()->first();
+        $this->assertEquals('another_job_that_fails', $failedJob->name());
+
+        // Remove by ID
+        queue::remove($failedJob->id());
+
+        // All the jobs are gone
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage Job not found
+     */
+    public function Queue_remove__throws_error_on_wrong_id()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        // Take the first ID and add rubbish
+        $id = queue::failedJobs()->first()->id();
+        $id = $id . 'asdasd';
+
+        queue::remove($id);
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage queue::remove() expects a Job object
+     */
+    public function Queue_remove__throws_error_on_non_job()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        queue::remove(new Silo());
+    }
+
+    /** @test */
     public function Queue_flush__removes_all_jobs()
     {
         $this->assertCount(0, queue::jobs());
