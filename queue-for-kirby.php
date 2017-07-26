@@ -11,11 +11,21 @@ class Queue
 {
     private static $actions = [];
 
+    /**
+     * Defines an action to perform when job is worked on
+     * @param  string Name of the action
+     * @param  Callable Closure with the action
+     */
     public static function define($name, $action)
     {
         static::$actions[$name] = $action;
     }
 
+    /**
+     * Adds a new job to the queue
+     * @param string Name of the action to be performed
+     * @param mixed Any data you want to pass in
+     */
     public static function add($name, $data = null)
     {
         $id = uniqid();
@@ -44,6 +54,9 @@ class Queue
         ]);
     }
 
+    /**
+     * Executes the first job in the queue folder
+     */
     public static function work()
     {
         // Protect ourselfs against multiple workers at once
@@ -88,21 +101,35 @@ class Queue
         return new Collection($jobs);
     }
 
+    /**
+     * Returns all jobs in the queue
+     * @return Collection Collection with Job objects
+     */
     public static function jobs()
     {
         return static::_jobs(false);
     }
 
+    /**
+     * Returns all failed jobs
+     * @return Collection Collection with Job objects
+     */
     public static function failedJobs()
     {
         return static::_jobs(true);
     }
 
+    /**
+     * @return boolean
+     */
     public static function hasJobs()
     {
         return static::_get_next_jobfile() !== false;
     }
 
+    /**
+     * Removes all jobs from the queue, including failed jobs
+     */
     public static function flush()
     {
         dir::clean(static::path());
@@ -131,11 +158,19 @@ class Queue
         return new Job($job);
     }
 
+    /**
+     * Returns the full path of the queue folder
+     * @return string
+     */
     public static function path()
     {
         return kirby()->roots()->site() . DS . 'queue';
     }
 
+    /**
+     * Returns the full path of the failed jobs folder
+     * @return string
+     */
     public static function failedPath()
     {
         return static::path() . DS . '.failed';
