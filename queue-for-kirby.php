@@ -13,8 +13,8 @@ class Queue
 
     /**
      * Defines an action to perform when job is worked on
-     * @param  string Name of the action
-     * @param  Callable Closure with the action
+     * @param  string    Name of the action
+     * @param  Callable  Closure with the action
      */
     public static function define($name, $action)
     {
@@ -23,8 +23,8 @@ class Queue
 
     /**
      * Adds a new job to the queue
-     * @param string Name of the action to be performed
-     * @param mixed Any data you want to pass in
+     * @param string  Name of the action to be performed
+     * @param mixed   Any data you want to pass in
      */
     public static function add($name, $data = null)
     {
@@ -103,7 +103,7 @@ class Queue
 
     /**
      * Returns all jobs in the queue
-     * @return Collection Collection with Job objects
+     * @return Collection  Collection with Job objects
      */
     public static function jobs()
     {
@@ -112,7 +112,7 @@ class Queue
 
     /**
      * Returns all failed jobs
-     * @return Collection Collection with Job objects
+     * @return Collection  Collection with Job objects
      */
     public static function failedJobs()
     {
