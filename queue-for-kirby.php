@@ -81,9 +81,11 @@ class Queue
             return substr($job,0,1) != '.';
         });
 
-        return array_map(function ($job) use ($path) {
+        $jobs = array_map(function ($job) use ($path) {
             return new Job(yaml::read($path . DS . $job));
         }, $jobs);
+
+        return new Collection($jobs);
     }
 
     public static function jobs()
