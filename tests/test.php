@@ -58,7 +58,7 @@ final class QueueTest extends TestCase
         $this->assertCount(2, $jobs);
 
         // Test first job of queue
-        $job = array_shift($jobs);
+        $job = $jobs->nth(0);
         $this->assertEquals('test_job', $job->name());
         $this->assertEquals([
             'param' => 'some data'
@@ -66,14 +66,150 @@ final class QueueTest extends TestCase
         $this->assertEquals('some data', $job->get('param'));
 
         // Test second job of queue
-        $job = array_shift($jobs);
+        $job = $jobs->nth(1);
         $this->assertEquals('another_job', $job->name());
         $this->assertEquals(null, $job->data());
         $this->assertEquals(null, $job->get('param'));
 
-        // Note that the code above does not remove the jobs!
-        $this->assertCount(2, queue::jobs());
+        // Note that the code above does not remove the jobs
+        // or change the queue at all!
         // Use queue::work() for that
+    }
+
+    /** @test */
+    public function Queue_retry__adds_to_queue()
+    {
+        queue::define('job_to_fail', function() {
+            return false;
+        });
+
+        queue::add('job_to_fail');
+        queue::work();
+
+        // We now have 0 jobs and 1 failed job
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // Take the Job and retry
+        $failedJob = queue::failedJobs()->first();
+        queue::retry($failedJob);
+
+        // The job has been added to the queue again
+        $this->assertCount(1, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+
+        // Job will still fail
+        queue::work();
+
+        // The job has failed
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // Take the Job and retry by ID
+        $failedJob = queue::failedJobs()->first();
+        $id = $failedJob->id();
+
+        // The ID is a string
+        $this->assertInternalType('string', $id);
+
+        queue::retry($id);
+
+        // And the job is back in the queue again
+        $this->assertCount(1, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage Job not found
+     */
+    public function Queue_retry__throws_error_on_wrong_id()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        // Take the first ID and add rubbish
+        $id = queue::failedJobs()->first()->id();
+        $id = $id . 'asdasd';
+
+        queue::retry($id);
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage queue::retry() expects a Job object
+     */
+    public function Queue_retry__throws_error_on_non_job()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        queue::retry(new HTML());
+    }
+
+    /** @test */
+    public function Queue_remove__removes_failed_jobs()
+    {
+        queue::add('job_to_fail');
+        queue::add('another_job_that_fails');
+        queue::work();
+        queue::work();
+
+        // We now have 0 jobs and 2 failed job
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(2, queue::failedJobs());
+
+        // Take the Job, check if it's the one, and remove it
+        $failedJob = queue::failedJobs()->first();
+        $this->assertEquals('job_to_fail', $failedJob->name());
+        queue::remove($failedJob);
+
+        // We have only one failed job now
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // The remaining job is the other job
+        $failedJob = queue::failedJobs()->first();
+        $this->assertEquals('another_job_that_fails', $failedJob->name());
+
+        // Remove by ID
+        queue::remove($failedJob->id());
+
+        // All the jobs are gone
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage Job not found
+     */
+    public function Queue_remove__throws_error_on_wrong_id()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        // Take the first ID and add rubbish
+        $id = queue::failedJobs()->first()->id();
+        $id = $id . 'asdasd';
+
+        queue::remove($id);
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage queue::remove() expects a Job object
+     */
+    public function Queue_remove__throws_error_on_non_job()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        queue::remove(new Silo());
     }
 
     /** @test */
@@ -117,7 +253,10 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::path())));
 
         // Check some things about the job
-        $this->assertEquals(new Job($job), a::first(queue::jobs()));
+        $this->assertEquals(
+            new Job($job),
+            queue::jobs()->first()
+        );
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['data'], $params);
 
@@ -153,7 +292,10 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
-        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
+        $this->assertEquals(
+            new Job($job),
+            queue::failedJobs()->first()
+        );
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Job returned false');
     }
@@ -181,7 +323,10 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
-        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
+        $this->assertEquals(
+            new Job($job),
+            queue::failedJobs()->first()
+        );
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Exception message');
     }
@@ -209,7 +354,10 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
-        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
+        $this->assertEquals(
+            new Job($job),
+            queue::failedJobs()->first()
+        );
         $this->assertEquals($job['name'], 'test_job');
         $this->assertEquals($job['error'], 'Error message');
     }
@@ -233,7 +381,10 @@ final class QueueTest extends TestCase
             a::first(dir::read(queue::failedPath())));
 
         // Check some things about the job
-        $this->assertEquals(new Job($job), a::first(queue::failedJobs()));
+        $this->assertEquals(
+            new Job($job),
+            queue::failedJobs()->first()
+        );
         $this->assertEquals($job['name'], 'job_without_action');
         $this->assertEquals($job['error'], 'Action \'job_without_action\' not defined');
     }

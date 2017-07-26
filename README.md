@@ -10,6 +10,12 @@ You then need to add `site/plugins/queue-for-kirby/worker.php` to your [Cron Job
 
 The plugin will try to create the folder `site/queue` and some files and folders within it.
 
+## Widget
+
+This plugin will add a widget to the panel dashboard if there are failed jobs, or if there are more than 5 jobs in the queue (indicating that there's something wrong).
+
+<img src="queue-widget.jpg" alt="queue-widget" width="480px">
+
 ## How to define jobs
 
 You need to define the following things within the base-file of your plugin, not in any lazy loaded classes (with Kirby's `load()` or composer's autoloading). Just put it in `site/plugins/your_plugin/your_plugin.php`.
@@ -26,12 +32,11 @@ queue::define('send_webmention', function($job) {
     $target = $job->get('target');
     $source = $job->get('source');
 
-    // Do something with your data, for example:
-    //   send a webmention!
+    // Do something with your data, for example: send a webmention!
     if(!send_webmention($target, $source)) {
         // Throw an error to fail a job
         throw new Error('Sending webmention failed');
-        // or just return false.
+        // or just return false, but setting a message for the user is better.
     }
 
     // No need to return or display anything else!
@@ -98,14 +103,14 @@ queue::add('another_job');
 
 ### queue::jobs()
 
-Returns an array of Job objects, for all jobs in the queue.
+Returns a [Collection](https://getkirby.com/docs/toolkit/api#collection) of Job objects, for all jobs in the queue.
 
 Doing something with these jobs does **not** change the queue. Only `queue::work()` removes jobs from the queue.
 
 ```php
 queue::jobs();
 // Returns, for example:
-[
+object(Collection) {
     object(Job) {
         'id' => '5975f78ed3db6',
         'added' => '2001-01-01T01:01:01+00:00',
@@ -120,17 +125,22 @@ queue::jobs();
         'name' => 'another_job',
         'data' => null
     }
-]
+}
+
+// and
+
+queue::jobs()->first();
+// returns the first Job
 ```
 
 ### queue::failedJobs()
 
-Returns an array of Job objects, representing the failed jobs.
+Returns a [Collection](https://getkirby.com/docs/toolkit/api#collection) of Job objects, representing the failed jobs.
 
 ```php
-queue::jobs();
+queue::failedJobs();
 // Returns, for example:
-[
+object(Collection) {
     object(Job) {
         'id' => '5975f78ed3db6',
         'added' => '2001-01-01T01:01:01+00:00',
@@ -141,7 +151,42 @@ queue::jobs();
         'error' => 'Job returned false',
         'tried' => '2001-01-01T01:01:03+00:00'
     }
-]
+}
+
+// and
+
+queue::failedJobs()->last();
+// returns the last failed Job
+```
+
+### queue::retry($failedJob)
+
+Moves a failed job back in the queue. Use to trigger in a panel widget or after some other user input.
+
+Note that this does not immediately act on the failed job. It is just added to the queue – probably at the front due to it's old ID – and gets handled as soon as your Cron Job executes `worker.php`.
+
+```php
+$failedJob = queue::failedJobs()->first();
+
+queue::retry($failedJob);
+
+// or
+
+queue::retry('5975f78ed3db6');
+```
+
+### queue::remove($failedJob)
+
+Removes a failed job entirely. Note that this only works for failed jobs.
+
+```php
+$failedJob = queue::failedJobs()->last();
+
+queue::remove($failedJob);
+
+// or
+
+queue::remove('5975f78ed3db6');
 ```
 
 ### queue::work()

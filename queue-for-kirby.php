@@ -1,6 +1,10 @@
 <?php
 
-class Job extends Obj {
+// Setup some panel things
+if(class_exists('Panel')) require(__DIR__ . DS . 'panel' . DS . 'init.php');
+
+class Job extends Obj
+{
     public function get($key, $default = null)
     {
         return isset($this->data[$key]) ? $this->data[$key] : $default;
@@ -11,11 +15,21 @@ class Queue
 {
     private static $actions = [];
 
+    /**
+     * Defines an action to perform when job is worked on
+     * @param  string    Name of the action
+     * @param  Callable  Closure with the action
+     */
     public static function define($name, $action)
     {
         static::$actions[$name] = $action;
     }
 
+    /**
+     * Adds a new job to the queue
+     * @param string  Name of the action to be performed
+     * @param mixed   Any data you want to pass in
+     */
     public static function add($name, $data = null)
     {
         $id = uniqid();
@@ -30,9 +44,50 @@ class Queue
         ]);
     }
 
+    /**
+     * Adds a failed job back to the queue
+     * @param  string|Job  ID or Job object to be retried
+     * @throws Error       When a non-Job object is given
+     * @throws Error       When failed Job with ID is not found
+     */
+    public static function retry($failedJob)
+    {
+        if (is_string($failedJob)) {
+            $failedJob = static::_find_failed_by_id($failedJob);
+        }
+
+        if (!is_a($failedJob, 'Job')) {
+            throw new Error('queue::retry() expects a Job object');
+        }
+
+        f::move(
+            static::failedPath() . DS . $failedJob->id() . '.yml',
+            static::path()       . DS . $failedJob->id() . '.yml'
+        );
+    }
+
+    /**
+     * Removes a failed job
+     * @param  string|Job  ID or Job object to be deleted
+     * @throws Error       When a non-Job object is given
+     * @throws Error       When failed Job with ID is not found
+     */
+    public static function remove($failedJob)
+    {
+        if (is_string($failedJob)) {
+            $failedJob = static::_find_failed_by_id($failedJob);
+        }
+
+        if (!is_a($failedJob, 'Job')) {
+            throw new Error('queue::remove() expects a Job object');
+        }
+
+        f::remove(static::failedPath() . DS . $failedJob->id() . '.yml');
+    }
+
     private static function failed($job, $error)
     {
-        $jobfile = static::path() . DS . '.failed' . DS . $job->id() . '.yml';
+        $jobfile = static::failedPath() . DS . $job->id() . '.yml';
 
         yaml::write($jobfile, [
             'id' => $job->id(),
@@ -44,6 +99,9 @@ class Queue
         ]);
     }
 
+    /**
+     * Executes the first job in the queue folder
+     */
     public static function work()
     {
         // Protect ourselfs against multiple workers at once
@@ -81,29 +139,55 @@ class Queue
             return substr($job,0,1) != '.';
         });
 
-        return array_map(function ($job) use ($path) {
+        $jobs = array_map(function ($job) use ($path) {
             return new Job(yaml::read($path . DS . $job));
         }, $jobs);
+
+        return new Collection($jobs);
     }
 
+    /**
+     * Returns all jobs in the queue
+     * @return Collection  Collection with Job objects
+     */
     public static function jobs()
     {
         return static::_jobs(false);
     }
 
+    /**
+     * Returns all failed jobs
+     * @return Collection  Collection with Job objects
+     */
     public static function failedJobs()
     {
         return static::_jobs(true);
     }
 
+    /**
+     * @return boolean
+     */
     public static function hasJobs()
     {
         return static::_get_next_jobfile() !== false;
     }
 
+    /**
+     * Removes all jobs from the queue, including failed jobs
+     */
     public static function flush()
     {
         dir::clean(static::path());
+    }
+
+    private static function _find_failed_by_id($id)
+    {
+        $filename = static::failedPath() . DS . $id . '.yml';
+
+        if (!f::exists($filename)) throw new Error('Job not found');
+
+        return new Job(yaml::read($filename));
+
     }
 
     private static function _get_next_jobfile()
@@ -129,11 +213,19 @@ class Queue
         return new Job($job);
     }
 
+    /**
+     * Returns the full path of the queue folder
+     * @return string
+     */
     public static function path()
     {
         return kirby()->roots()->site() . DS . 'queue';
     }
 
+    /**
+     * Returns the full path of the failed jobs folder
+     * @return string
+     */
     public static function failedPath()
     {
         return static::path() . DS . '.failed';
