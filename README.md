@@ -22,20 +22,19 @@ if(!class_exists('queue')) throw new Exception('This plugin requires the Queue f
 // Define a job by giving it a name and an action
 queue::define('send_webmention', function($job) {
 
-    // For example: send a webmention!
-    $endpoint = discover_webmention_endpoint($job->get('target'));
+    // Get your data
+    $target = $job->get('target');
+    $source = $job->get('source');
 
-    $r = remote::post($endpoint, ['data' => [
-        'target' => $job->get('target'),
-        'source' => $job->get('source')
-    ]]);
-
-    // But it could be anything ofcourse
-
-    if($r->code != 201 and $r->code != 202) {
-        // Return false or throw an exception to fail the job
-        return false;
+    // Do something with your data, for example:
+    //   send a webmention!
+    if(!send_webmention($target, $source)) {
+        // Throw an error to fail a job
+        throw new Error('Sending webmention failed');
+        // or just return false.
     }
+
+    // No need to return or display anything else!
 });
 ```
 

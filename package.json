@@ -4,5 +4,12 @@
   "author": "Sebastiaan Andeweg",
   "license": "MIT",
   "version": "1.0.2",
-  "type": "kirby-plugin"
+  "type": "kirby-plugin",
+  "files": [
+    "package.json",
+    "LICENSE.md",
+    "README.md",
+    "queue-for-kirby.php",
+    "worker.php"
+  ]
 }
