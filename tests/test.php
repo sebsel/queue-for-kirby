@@ -77,6 +77,79 @@ final class QueueTest extends TestCase
     }
 
     /** @test */
+    public function Queue_retry__adds_to_queue()
+    {
+        queue::define('job_to_fail', function() {
+            return false;
+        });
+
+        queue::add('job_to_fail');
+        queue::work();
+
+        // We now have 0 jobs and 1 failed job
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // Take the Job and retry
+        $failedJob = queue::failedJobs()->first();
+        queue::retry($failedJob);
+
+        // The job has been added to the queue again
+        $this->assertCount(1, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+
+        // Job will still fail
+        queue::work();
+
+        // The job has failed
+        $this->assertCount(0, queue::jobs());
+        $this->assertCount(1, queue::failedJobs());
+
+        // Take the Job and retry by ID
+        $failedJob = queue::failedJobs()->first();
+        $id = $failedJob->id();
+
+        // The ID is a string
+        $this->assertInternalType('string', $id);
+
+        queue::retry($id);
+
+        // And the job is back in the queue again
+        $this->assertCount(1, queue::jobs());
+        $this->assertCount(0, queue::failedJobs());
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage Job not found
+     */
+    public function Queue_retry__throws_error_on_wrong_id()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        // Take the first ID and add rubbish
+        $id = queue::failedJobs()->first()->id();
+        $id = $id . 'asdasd';
+
+        queue::retry($id);
+    }
+
+    /**
+     * @test
+     * @expectedException Error
+     * @expectedExceptionMessage queue::retry() expects a Job object
+     */
+    public function Queue_retry__throws_error_on_non_job()
+    {
+        queue::add('job_to_fail');
+        queue::work();
+
+        queue::retry(new HTML());
+    }
+
+    /** @test */
     public function Queue_flush__removes_all_jobs()
     {
         $this->assertCount(0, queue::jobs());

@@ -39,10 +39,31 @@ class Queue
             'data' => $data
         ]);
     }
+    /**
+     * Adds a failed job back to the queue
+     * @param  string|Job  ID or Job object to be retried
+     * @throws Error       When a non-Job object is given
+     * @throws Error       When failed Job with ID is not found
+     */
+    public static function retry($failedJob)
+    {
+        if (is_string($failedJob)) {
+            $failedJob = static::_find_failed_by_id($failedJob);
+        }
+
+        if (!is_a($failedJob, 'Job')) {
+            throw new Error('queue::retry() expects a Job object');
+        }
+
+        f::move(
+            static::failedPath() . DS . $failedJob->id() . '.yml',
+            static::path()       . DS . $failedJob->id() . '.yml'
+        );
+    }
 
     private static function failed($job, $error)
     {
-        $jobfile = static::path() . DS . '.failed' . DS . $job->id() . '.yml';
+        $jobfile = static::failedPath() . DS . $job->id() . '.yml';
 
         yaml::write($jobfile, [
             'id' => $job->id(),
@@ -133,6 +154,16 @@ class Queue
     public static function flush()
     {
         dir::clean(static::path());
+    }
+
+    private static function _find_failed_by_id($id)
+    {
+        $filename = static::failedPath() . DS . $id . '.yml';
+
+        if (!f::exists($filename)) throw new Error('Job not found');
+
+        return new Job(yaml::read($filename));
+
     }
 
     private static function _get_next_jobfile()
