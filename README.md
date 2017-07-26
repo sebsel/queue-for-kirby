@@ -14,7 +14,7 @@ The plugin will try to create the folder `site/queue` and some files and folders
 
 This plugin will add a widget to the panel dashboard if there are failed jobs, or if there are more than 5 jobs in the queue (indicating that there's something wrong).
 
-![queue-widget](queue-widget.jpg)
+<img src="queue-widget.jpg" alt="queue-widget" width="480px">
 
 ## How to define jobs
 
