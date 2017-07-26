@@ -10,6 +10,12 @@ You then need to add `site/plugins/queue-for-kirby/worker.php` to your [Cron Job
 
 The plugin will try to create the folder `site/queue` and some files and folders within it.
 
+## Widget
+
+This plugin will add a widget to the panel dashboard if there are failed jobs, or if there are more than 5 jobs in the queue (indicating that there's something wrong).
+
+![queue-widget](queue-widget.jpg)
+
 ## How to define jobs
 
 You need to define the following things within the base-file of your plugin, not in any lazy loaded classes (with Kirby's `load()` or composer's autoloading). Just put it in `site/plugins/your_plugin/your_plugin.php`.
@@ -26,12 +32,11 @@ queue::define('send_webmention', function($job) {
     $target = $job->get('target');
     $source = $job->get('source');
 
-    // Do something with your data, for example:
-    //   send a webmention!
+    // Do something with your data, for example: send a webmention!
     if(!send_webmention($target, $source)) {
         // Throw an error to fail a job
         throw new Error('Sending webmention failed');
-        // or just return false.
+        // or just return false, but setting a message for the user is better.
     }
 
     // No need to return or display anything else!
@@ -168,6 +173,20 @@ queue::retry($failedJob);
 // or
 
 queue::retry('5975f78ed3db6');
+```
+
+### queue::remove($failedJob)
+
+Removes a failed job entirely. Note that this only works for failed jobs.
+
+```php
+$failedJob = queue::failedJobs()->last();
+
+queue::remove($failedJob);
+
+// or
+
+queue::remove('5975f78ed3db6');
 ```
 
 ### queue::work()
