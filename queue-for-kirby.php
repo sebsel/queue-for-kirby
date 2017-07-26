@@ -1,6 +1,10 @@
 <?php
 
-class Job extends Obj {
+// Setup some panel things
+if(class_exists('Panel')) require(__DIR__ . DS . 'panel' . DS . 'init.php');
+
+class Job extends Obj
+{
     public function get($key, $default = null)
     {
         return isset($this->data[$key]) ? $this->data[$key] : $default;
@@ -39,6 +43,7 @@ class Queue
             'data' => $data
         ]);
     }
+
     /**
      * Adds a failed job back to the queue
      * @param  string|Job  ID or Job object to be retried

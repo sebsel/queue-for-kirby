@@ -10,6 +10,7 @@
     "LICENSE.md",
     "README.md",
     "queue-for-kirby.php",
-    "worker.php"
+    "worker.php",
+    "panel/"
   ]
 }
