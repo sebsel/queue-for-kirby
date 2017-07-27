@@ -1,10 +1,9 @@
 <?php
-require(dirname(__DIR__) . DIRECTORY_SEPARATOR .
-    '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR .
+require(dirname(dirname(dirname(__DIR__))) . DIRECTORY_SEPARATOR .
     'kirby' . DIRECTORY_SEPARATOR . 'bootstrap.php');
 
 $kirby = kirby();
-$kirby->plugin('queue-for-kirby');
+include_once(__DIR__ . DS . 'queue-for-kirby.php');
 
 if (!queue::hasJobs()) exit();
 

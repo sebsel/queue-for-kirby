@@ -3,7 +3,7 @@
   "description": "Basic queue to the Kirby CMS, using Cron and Kirby's flat file system",
   "author": "Sebastiaan Andeweg",
   "license": "MIT",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "kirby-plugin",
   "files": [
     "package.json",
