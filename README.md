@@ -10,6 +10,12 @@ You then need to add `site/plugins/queue-for-kirby/worker.php` to your [Cron Job
 
 The plugin will try to create the folder `site/queue` and some files and folders within it.
 
+## Configuration
+
+The plugin is designed to be used in other plugins, see below for examples.
+
+**Please note**: your domain specific configuration-files (`config.example.com.php`) might not have been loaded when you run the worker.
+
 ## Widget
 
 This plugin will add a widget to the panel dashboard if there are failed jobs, or if there are more than 5 jobs in the queue (indicating that there's something wrong).
