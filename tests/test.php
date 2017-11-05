@@ -388,4 +388,26 @@ final class QueueTest extends TestCase
         $this->assertEquals($job['name'], 'job_without_action');
         $this->assertEquals($job['error'], 'Action \'job_without_action\' not defined');
     }
+
+    /** @test */
+    public function job_fails_on_teminating_process()
+    {
+        // # This one is impossible to test via PHPUnit, because we
+        // # exit the PHP-unit process as well. To test this function,
+        // # uncomment it, run the test it, and see the contents of
+        // # the `site/queue/.failed` folder yourself.
+        //
+        // # Assert for yourself that:
+        // #   $job['name'] == 'teminating_job'
+        // #   $job['error'] == 'Job action terminated execution'
+        //
+        // # After that, remove the file from the queue.
+        //
+        // queue::define('teminating_job', function() {
+        //     die();
+        // });
+        // queue::add('teminating_job');
+        // queue::work();
+    }
+
 }

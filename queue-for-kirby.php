@@ -14,6 +14,7 @@ class Job extends Obj
 class Queue
 {
     private static $actions = [];
+    public static $current_job;
 
     /**
      * Defines an action to perform when job is worked on
@@ -107,21 +108,27 @@ class Queue
         // Protect ourselfs against multiple workers at once
         if (static::isWorking()) exit();
         static::setWorking();
+        register_shutdown_function(function(){
+            if(queue::$current_job) {
+                queue::failed(queue::$current_job, 'Job action terminated execution');
+                queue::stopWorking();
+            }
+        });
 
         if (static::hasJobs()) {
-            $job = static::_get_next_job();
+            static::$current_job = static::_get_next_job();
             try {
-                if (!isset(static::$actions[$job->name()])
-                    or !is_callable(static::$actions[$job->name()])) {
-                    throw new Error("Action '{$job->name()}' not defined");
+                if (!isset(static::$actions[static::$current_job->name()])
+                    or !is_callable(static::$actions[static::$current_job->name()])) {
+                    throw new Error("Action '" . static::$current_job->name() . "'' not defined");
                 }
-                if (call_user_func(static::$actions[$job->name()], $job) === false) {
+                if (call_user_func(static::$actions[static::$current_job->name()], static::$current_job) === false) {
                     throw new Error('Job returned false');
                 }
             } catch (Exception $e) {
-                static::failed($job, $e->getMessage());
+                static::failed(static::$current_job, $e->getMessage());
             } catch (Error $e) {
-                static::failed($job, $e->getMessage());
+                static::failed(static::$current_job, $e->getMessage());
             }
         }
 
@@ -231,18 +238,19 @@ class Queue
         return static::path() . DS . '.failed';
     }
 
-    private static function isWorking()
+    public static function isWorking()
     {
         return f::exists(static::path() . DS . '.working');
     }
 
-    private static function setWorking()
+    public static function setWorking()
     {
         dir::make(static::path() . DS . '.working');
     }
 
-    private static function stopWorking()
+    public static function stopWorking()
     {
+        queue::$current_job = null;
         dir::remove(static::path() . DS . '.working');
     }
 }
